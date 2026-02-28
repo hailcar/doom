@@ -128,3 +128,34 @@
                 (unless (marker-position (point-marker))
                   (message "Company: 拦截到无效标记点，防止崩溃"))))
 )
+
+(with-eval-after-load 'lsp-java
+  ;; 定义一个清理函数
+  (defun my/lsp-java-remove-release-suffix (orig-fun &rest args)
+    "在执行原函数后，对结果进行后处理（如果原函数返回的是版本字符串或包含版本信息的列表）"
+    (let ((result (apply orig-fun args)))
+      (if (stringp result)
+          (replace-regexp-in-string "\\.RELEASE" "" result)
+        result)))
+
+  ;; 如果 .RELEASE 是在参数里传入的，用 filter-args
+  ;; 如果是拦截函数生成的 URL，用这个 around 增强
+  (advice-add 'lsp-java-spring-initializr :around #'my/lsp-java-remove-release-suffix))
+
+;;(after! tramp
+;;  ;; 强行将远程服务器上 SDKMAN 的默认 Java 路径加入 TRAMP
+;;  ;; 注意：请将下面的 "你的远程用户名" 替换为实际的用户名（如 root 或 ubuntu）
+;;  (add-to-list 'tramp-remote-path "/root/.sdkman/candidates/java/current/bin")
+;;
+;;  ;; 如果你还用 SDKMAN 管理了 Maven 或 Gradle，也可以顺便加进来
+;;  (add-to-list 'tramp-remote-path "/root/.sdkman/candidates/maven/current/bin")
+;;  (add-to-list 'tramp-remote-path "/root/.sdkman/candidates/gradle/current/bin")
+;;)
+
+
+(after! tramp
+  ;; 让 TRAMP 正确读取远程机器的环境变量 (特别是 SDKMAN 的 Java 路径)
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path))
+
+
+(setq enable-remote-dir-locals t)
