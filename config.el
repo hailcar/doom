@@ -159,3 +159,20 @@
 
 
 (setq enable-remote-dir-locals t)
+
+
+;; 1. 先定义启动函数（放在外面或 inside after! 都可以）
+(defun kotlin-lsp-server-start-fun (port)
+  (list "kotlin-lsp" "--socket" (number-to-string port)))
+
+;; 2. 确保在 lsp-mode 加载后再执行注册逻辑
+(after! lsp-mode
+  (add-to-list 'lsp-language-id-configuration '(kotlin-mode . "kotlin"))
+
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-tcp-connection 'kotlin-lsp-server-start-fun)
+    :activation-fn (lsp-activate-on "kotlin")
+    :major-modes '(kotlin-mode)
+    :priority 1  ; <--- 注意：如果你想优先用官方的，建议设为 1
+    :server-id 'kotlin-jb-lsp)))
